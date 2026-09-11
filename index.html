@@ -1523,9 +1523,10 @@
     }
 
     function clearForm(resetButtonText = false) {
+      const selectedDate = dateInput.value;
       form.reset();
       form.dataset.editingId = '';
-      dateInput.value = new Date().toISOString().slice(0, 10);
+      dateInput.value = selectedDate || new Date().toISOString().slice(0, 10);
       updatePersonField();
       const submitBtn = form.querySelector('button[type="submit"]');
       if (submitBtn) submitBtn.textContent = 'Save Transaction';
@@ -1634,7 +1635,6 @@
     document.querySelectorAll('[data-quick-type]').forEach(button => {
       button.addEventListener('click', () => {
         typeInput.value = button.dataset.quickType;
-        dateInput.value = new Date().toISOString().slice(0, 10);
         updatePersonField();
         amountInput.focus();
         form.scrollIntoView({ behavior: 'smooth', block: 'start' });
