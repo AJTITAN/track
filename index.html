@@ -1,0 +1,1569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Expense Tracker</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --panel-alt: #f8fafc;
+      --line: #dfe7f1;
+      --text: #132033;
+      --muted: #5a6b82;
+      --primary: #3b82f6;
+      --primary-2: #2563eb;
+      --green: #1f9d6b;
+      --red: #d14a4a;
+      --yellow: #b7791f;
+      --purple: #7c5ee8;
+      --orange: #d97706;
+      --cyan: #0ea5e9;
+      --shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, "Segoe UI", sans-serif;
+    }
+
+    body {
+      padding: 28px 18px 60px;
+    }
+
+    .app {
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 22px;
+      flex-wrap: wrap;
+    }
+
+    .title-wrap h1 {
+      margin: 0;
+      font-size: clamp(2rem, 3vw, 2.7rem);
+      letter-spacing: -0.06em;
+    }
+
+    .title-wrap p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 0.96rem;
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button, select, input, textarea {
+      font: inherit;
+    }
+
+    .btn {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--text);
+      border-radius: 12px;
+      padding: 10px 14px;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .btn:hover { transform: translateY(-1px); border-color: rgba(59, 130, 246, 0.4); }
+    .btn.primary {
+      background: linear-gradient(135deg, var(--primary), var(--primary-2));
+      border: none;
+      color: white;
+      box-shadow: var(--shadow);
+    }
+
+    .btn.warn {
+      background: rgba(209, 74, 74, 0.05);
+      border-color: rgba(209, 74, 74, 0.4);
+      color: var(--red);
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .stat-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px 18px 16px;
+    }
+
+    .stat-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 5px 8px;
+      font-size: 0.7rem;
+      background: rgba(59, 130, 246, 0.08);
+      color: var(--primary-2);
+      border: 1px solid rgba(59, 130, 246, 0.15);
+    }
+
+    .chip.green { background: rgba(31, 157, 107, 0.08); color: var(--green); border-color: rgba(31, 157, 107, 0.18); }
+    .chip.red { background: rgba(209, 74, 74, 0.08); color: var(--red); border-color: rgba(209, 74, 74, 0.2); }
+    .chip.yellow { background: rgba(183, 121, 31, 0.08); color: var(--yellow); border-color: rgba(183, 121, 31, 0.18); }
+
+    .stat-value {
+      font-size: clamp(1.5rem, 2vw, 2.1rem);
+      font-weight: 700;
+      letter-spacing: -0.05em;
+      margin-bottom: 6px;
+    }
+
+    .mini-note {
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 18px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 20px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .panel-header h2 {
+      margin: 0;
+      font-size: 1.05rem;
+      letter-spacing: -0.03em;
+    }
+
+    .panel-body {
+      padding: 18px 20px 20px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(180px, 1fr));
+      gap: 14px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .field.full {
+      grid-column: 1 / -1;
+    }
+
+    label {
+      color: var(--muted);
+      font-size: 0.8rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      border-radius: 12px;
+      background: var(--panel-alt);
+      border: 1px solid var(--line);
+      color: var(--text);
+      padding: 12px 12px;
+      outline: none;
+      transition: 0.15s ease;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: rgba(59, 130, 246, 0.6);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.08);
+    }
+
+    textarea {
+      min-height: 86px;
+      resize: vertical;
+    }
+
+    .form-actions {
+      margin-top: 16px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .activity-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .entry {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 14px 12px;
+      background: var(--panel-alt);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+    }
+
+    .entry-main {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .entry-badge {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      font-size: 0.8rem;
+    }
+
+    .entry-badge.expense { background: rgba(209, 74, 74, 0.08); color: var(--red); }
+    .entry-badge.udhar { background: rgba(31, 157, 107, 0.08); color: var(--green); }
+    .entry-badge.borrowed { background: rgba(183, 121, 31, 0.08); color: var(--yellow); }
+
+    .entry-text {
+      min-width: 0;
+    }
+
+    .entry-name {
+      font-weight: 600;
+      margin: 0 0 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .entry-meta {
+      color: var(--muted);
+      font-size: 0.78rem;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .amount {
+      font-weight: 700;
+      font-size: 1.05rem;
+      letter-spacing: -0.04em;
+      white-space: nowrap;
+    }
+
+    .amount.positive { color: var(--green); }
+    .amount.negative { color: var(--red); }
+    .amount.neutral { color: var(--yellow); }
+
+    .entry-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .tiny-btn {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--text);
+      border-radius: 8px;
+      padding: 6px 9px;
+      cursor: pointer;
+      font-size: 0.75rem;
+    }
+
+    .tiny-btn.success {
+      background: rgba(31, 157, 107, 0.08);
+      border-color: rgba(31, 157, 107, 0.24);
+      color: var(--green);
+    }
+
+    .tiny-btn.danger {
+      background: rgba(209, 74, 74, 0.08);
+      border-color: rgba(209, 74, 74, 0.2);
+      color: var(--red);
+    }
+
+    .empty-state {
+      padding: 26px 18px;
+      text-align: center;
+      color: var(--muted);
+      border: 1px dashed var(--line);
+      border-radius: 12px;
+      background: rgba(148, 163, 184, 0.02);
+    }
+
+    .filters-row {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(140px, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .tools-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .tool-section {
+      border-top: 1px solid var(--line);
+      padding-top: 16px;
+    }
+
+    .tool-section h3 {
+      margin: 0 0 12px;
+      font-size: 0.95rem;
+    }
+
+    .inline-form {
+      display: grid;
+      grid-template-columns: 1fr 140px auto;
+      gap: 10px;
+      align-items: end;
+    }
+
+    .budget-list, .recurring-list, .settlement-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .budget-row, .recurring-row, .settlement-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--panel-alt);
+    }
+
+    .budget-row input {
+      width: 110px;
+      padding: 8px;
+    }
+
+    .recurring-row, .settlement-row { align-items: flex-start; }
+
+    .row-copy { min-width: 0; }
+    .row-copy strong, .row-copy span { display: block; }
+    .row-copy span { color: var(--muted); font-size: 0.78rem; margin-top: 3px; }
+
+    .progress-track {
+      height: 6px;
+      margin-top: 8px;
+      border-radius: 999px;
+      background: #e7edf5;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--primary);
+      border-radius: inherit;
+    }
+
+    .analytics-panel {
+      margin-top: 18px;
+    }
+
+    .analytics-toolbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding: 0 0 16px;
+    }
+
+    .segmented {
+      display: inline-flex;
+      background: rgba(148, 163, 184, 0.05);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 5px;
+      gap: 5px;
+    }
+
+    .segmented button {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      border-radius: 9px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-size: 0.82rem;
+    }
+
+    .segmented button.active {
+      background: rgba(59, 130, 246, 0.08);
+      color: var(--text);
+    }
+
+    .analytics-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 18px;
+    }
+
+    .chart-box {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--panel-alt);
+      padding: 12px;
+      min-height: 238px;
+    }
+
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .bars {
+      display: flex;
+      align-items: end;
+      gap: 8px;
+      height: 200px;
+      padding-top: 18px;
+    }
+
+    .bar-group {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: end;
+      gap: 6px;
+      height: 100%;
+    }
+
+    .bar {
+      width: 100%;
+      max-width: 48px;
+      border-radius: 10px 10px 0 0;
+      background: linear-gradient(180deg, var(--primary), var(--primary-2));
+      min-height: 12px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
+    }
+
+    .bar.alt { background: linear-gradient(180deg, var(--green), #10b981); }
+    .bar.red { background: linear-gradient(180deg, #f87171, #ef4444); }
+    .bar.purple { background: linear-gradient(180deg, #a78bfa, #8b5cf6); }
+
+    .bar-label {
+      font-size: 0.72rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .mini-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .mini-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 1px solid var(--line);
+      background: rgba(148, 163, 184, 0.02);
+      border-radius: 12px;
+      padding: 10px 12px;
+      color: var(--text);
+    }
+
+    .mini-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .contrast {
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    @media (max-width: 980px) {
+      .summary-grid { grid-template-columns: repeat(2, minmax(200px, 1fr)); }
+      .content-grid, .analytics-grid { grid-template-columns: 1fr; }
+      .filters-row { grid-template-columns: repeat(2, minmax(140px, 1fr)); }
+      .tools-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 640px) {
+      body { padding: 18px 12px 42px; }
+      .summary-grid, .form-grid { grid-template-columns: 1fr; }
+      .filters-row { grid-template-columns: 1fr; }
+      .inline-form { grid-template-columns: 1fr; }
+      .entry { grid-template-columns: 1fr; }
+      .panel-header { padding: 16px 14px 12px; }
+      .panel-body { padding: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="title-wrap">
+        <h1>Expense Tracker</h1>
+        <p>Track what you spend, what is owed, and what you borrowed.</p>
+      </div>
+      <div class="top-actions">
+        <button class="btn" id="importBtn" type="button">Import</button>
+        <button class="btn" id="exportBtn">Export</button>
+        <button class="btn primary" id="resetBtn">Reset Data</button>
+      </div>
+    </header>
+
+    <section class="summary-grid" id="summaryGrid"></section>
+
+    <div class="content-grid">
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Add Transaction</h2>
+        </div>
+        <div class="panel-body">
+          <form id="transactionForm">
+            <div class="form-grid">
+              <div class="field">
+                <label for="type">Type</label>
+                <select id="type" required>
+                  <option value="expense">My Expense</option>
+                  <option value="udhar">Udhar (someone owes me)</option>
+                  <option value="borrowed">I Borrowed (I owe someone)</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="person">Name / Person</label>
+                <input id="person" type="text" placeholder="e.g. Riya, Rahul, Cafe 9" required />
+              </div>
+
+              <div class="field">
+                <label for="amount">Amount</label>
+                <input id="amount" type="number" min="1" step="0.01" placeholder="0.00" required />
+              </div>
+
+              <div class="field">
+                <label for="category">Category</label>
+                <select id="category" required>
+                  <option value="food">Food</option>
+                  <option value="shopping">Shopping</option>
+                  <option value="travel">Travel</option>
+                  <option value="rent">Rent</option>
+                  <option value="bills">Bills</option>
+                  <option value="health">Health</option>
+                  <option value="education">Education</option>
+                  <option value="entertainment">Entertainment</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="paymentMethod">Payment Method</label>
+                <select id="paymentMethod" required>
+                  <option value="credit card">Credit Card</option>
+                  <option value="slice">Slice</option>
+                  <option value="bob bank">Bob Bank</option>
+                  <option value="cash">Cash</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="date">Date</label>
+                <input id="date" type="date" required />
+              </div>
+
+              <div class="field full">
+                <label for="notes">Notes</label>
+                <textarea id="notes" placeholder="What was this for?"></textarea>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn primary">Save Transaction</button>
+              <button type="button" class="btn" id="clearFormBtn">Clear</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Recent Activity</h2>
+        </div>
+        <div class="panel-body">
+          <div id="activityList" class="activity-list"></div>
+        </div>
+      </section>
+    </div>
+
+    <section class="panel analytics-panel">
+      <div class="panel-header">
+        <h2>Money Plan</h2>
+      </div>
+      <div class="panel-body">
+        <div class="tools-grid">
+          <div class="tool-section">
+            <h3>Monthly goal</h3>
+            <div class="inline-form">
+              <div class="field">
+                <label for="monthlyGoal">Spending limit</label>
+                <input id="monthlyGoal" type="number" min="0" step="100" placeholder="25000" />
+              </div>
+              <div class="field">
+                <label>This month</label>
+                <div id="goalStatus" class="mini-note">No goal set</div>
+              </div>
+              <button class="btn primary" id="saveGoalBtn" type="button">Save</button>
+            </div>
+            <div class="progress-track"><div id="goalProgress" class="progress-fill" style="width:0%"></div></div>
+          </div>
+
+          <div class="tool-section">
+            <h3>Category budgets</h3>
+            <div id="budgetList" class="budget-list"></div>
+            <button class="btn" id="saveBudgetsBtn" type="button" style="margin-top:10px;">Save budgets</button>
+          </div>
+
+          <div class="tool-section">
+            <h3>Recurring expenses</h3>
+            <div class="inline-form">
+              <div class="field">
+                <label for="recurringName">Name</label>
+                <input id="recurringName" type="text" placeholder="Internet bill" />
+              </div>
+              <div class="field">
+                <label for="recurringAmount">Amount</label>
+                <input id="recurringAmount" type="number" min="1" step="0.01" placeholder="999" />
+              </div>
+              <button class="btn primary" id="addRecurringBtn" type="button">Add</button>
+            </div>
+            <div id="recurringList" class="recurring-list" style="margin-top:10px;"></div>
+          </div>
+
+          <div class="tool-section">
+            <h3>Settlement history</h3>
+            <div id="settlementList" class="settlement-list"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel analytics-panel">
+      <div class="panel-header">
+        <h2>Analytics</h2>
+      </div>
+      <div class="panel-body">
+        <div class="filters-row">
+          <div class="field">
+            <label for="searchInput">Search</label>
+            <input id="searchInput" type="text" placeholder="Name, note, category" />
+          </div>
+          <div class="field">
+            <label for="filterType">Type</label>
+            <select id="filterType">
+              <option value="all">All</option>
+              <option value="expense">Expense</option>
+              <option value="udhar">Udhar</option>
+              <option value="borrowed">Borrowed</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="filterCategory">Category</label>
+            <select id="filterCategory">
+              <option value="all">All</option>
+              <option value="food">Food</option>
+              <option value="shopping">Shopping</option>
+              <option value="travel">Travel</option>
+              <option value="rent">Rent</option>
+              <option value="bills">Bills</option>
+              <option value="health">Health</option>
+              <option value="education">Education</option>
+              <option value="entertainment">Entertainment</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="filterPayment">Payment</label>
+            <select id="filterPayment">
+              <option value="all">All</option>
+              <option value="credit card">Credit Card</option>
+              <option value="slice">Slice</option>
+              <option value="bob bank">Bob Bank</option>
+              <option value="cash">Cash</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="analytics-toolbar">
+          <div class="segmented">
+            <button class="active" data-range="monthly">Monthly</button>
+            <button data-range="weekly">Weekly</button>
+            <button data-range="comparison">Comparison</button>
+          </div>
+        </div>
+
+        <div class="analytics-grid">
+          <div class="chart-box">
+            <div class="chart-header">
+              <span id="chartTitle">Monthly spend</span>
+              <span id="chartTotal">₹0</span>
+            </div>
+            <div id="chartContainer" class="bars"></div>
+          </div>
+
+          <div>
+            <div class="chart-box">
+              <div class="chart-header">
+                <span>Category split</span>
+                <span id="categoryTotal">₹0</span>
+              </div>
+              <div id="categoryList" class="mini-list"></div>
+            </div>
+            <div class="chart-box" style="margin-top:18px; min-height:0;">
+              <div class="chart-header">
+                <span>Payment methods</span>
+                <span id="paymentTotal">₹0</span>
+              </div>
+              <div id="paymentList" class="mini-list"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'expense-tracker-v1';
+    const defaultBudgets = {
+      food: 5000,
+      shopping: 4000,
+      travel: 3000,
+      rent: 12000,
+      bills: 5000,
+      health: 2500,
+      education: 4000,
+      entertainment: 2500,
+      other: 2000
+    };
+    const defaultState = {
+      transactions: [],
+      budgets: { ...defaultBudgets },
+      monthlyGoal: 0,
+      recurring: [],
+      settlements: []
+    };
+
+    const state = loadState();
+    const form = document.getElementById('transactionForm');
+    const typeInput = document.getElementById('type');
+    const personInput = document.getElementById('person');
+    const amountInput = document.getElementById('amount');
+    const categoryInput = document.getElementById('category');
+    const paymentMethodInput = document.getElementById('paymentMethod');
+    const dateInput = document.getElementById('date');
+    const notesInput = document.getElementById('notes');
+    const searchInput = document.getElementById('searchInput');
+    const filterType = document.getElementById('filterType');
+    const filterCategory = document.getElementById('filterCategory');
+    const filterPayment = document.getElementById('filterPayment');
+    const summaryGrid = document.getElementById('summaryGrid');
+    const activityList = document.getElementById('activityList');
+    const chartContainer = document.getElementById('chartContainer');
+    const categoryList = document.getElementById('categoryList');
+    const chartTitle = document.getElementById('chartTitle');
+    const chartTotal = document.getElementById('chartTotal');
+    const categoryTotal = document.getElementById('categoryTotal');
+    const paymentList = document.getElementById('paymentList');
+    const paymentTotal = document.getElementById('paymentTotal');
+    const monthlyGoalInput = document.getElementById('monthlyGoal');
+    const goalStatus = document.getElementById('goalStatus');
+    const goalProgress = document.getElementById('goalProgress');
+    const budgetList = document.getElementById('budgetList');
+    const recurringNameInput = document.getElementById('recurringName');
+    const recurringAmountInput = document.getElementById('recurringAmount');
+    const recurringList = document.getElementById('recurringList');
+    const settlementList = document.getElementById('settlementList');
+
+    let currentRange = 'monthly';
+
+    const categoryColors = {
+      food: '#60a5fa',
+      shopping: '#a78bfa',
+      travel: '#34d399',
+      rent: '#fbbf24',
+      bills: '#f87171',
+      health: '#22d3ee',
+      education: '#fb923c',
+      entertainment: '#c084fc',
+      other: '#94a3b8'
+    };
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return JSON.parse(JSON.stringify(defaultState));
+        const parsed = JSON.parse(raw);
+        return {
+          transactions: Array.isArray(parsed.transactions) ? parsed.transactions : [],
+          budgets: { ...defaultBudgets, ...(parsed.budgets || {}) },
+          monthlyGoal: Number(parsed.monthlyGoal || 0),
+          recurring: Array.isArray(parsed.recurring) ? parsed.recurring : [],
+          settlements: Array.isArray(parsed.settlements) ? parsed.settlements : []
+        };
+      } catch {
+        return JSON.parse(JSON.stringify(defaultState));
+      }
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function formatCurrency(value) {
+      return new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+        maximumFractionDigits: 0
+      }).format(Number(value || 0));
+    }
+
+    function escapeHtml(str = '') {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function makeId() {
+      return (crypto && crypto.randomUUID) ? crypto.randomUUID() : 'id-' + Date.now() + '-' + Math.random().toString(16).slice(2);
+    }
+
+    function normalizeTransaction(tx) {
+      return {
+        id: tx.id || makeId(),
+        type: tx.type || 'expense',
+        person: String(tx.person || '').trim(),
+        amount: Number(tx.amount || 0),
+        category: tx.category || 'other',
+        paymentMethod: tx.paymentMethod || 'cash',
+        date: tx.date || new Date().toISOString().slice(0, 10),
+        notes: String(tx.notes || '').trim(),
+        settled: Boolean(tx.settled)
+      };
+    }
+
+    function getFilteredTransactions() {
+      const search = (searchInput.value || '').trim().toLowerCase();
+      const typeVal = filterType.value;
+      const categoryVal = filterCategory.value;
+      const paymentVal = filterPayment.value;
+
+      return [...state.transactions]
+        .map(normalizeTransaction)
+        .filter(item => {
+          const haystack = [item.person, item.notes, item.category, item.paymentMethod].join(' ').toLowerCase();
+          const matchesSearch = !search || haystack.includes(search);
+          const matchesType = typeVal === 'all' || item.type === typeVal;
+          const matchesCategory = categoryVal === 'all' || item.category === categoryVal;
+          const matchesPayment = paymentVal === 'all' || item.paymentMethod === paymentVal;
+          return matchesSearch && matchesType && matchesCategory && matchesPayment;
+        })
+        .sort((a, b) => new Date(b.date) - new Date(a.date));
+    }
+
+    function getBudgetData() {
+      const totals = {};
+      const currentMonthKey = getMonthKey(new Date().toISOString().slice(0, 10));
+      state.transactions.filter(tx => tx.type === 'expense').forEach(tx => {
+        if (getMonthKey(tx.date) !== currentMonthKey) return;
+        totals[tx.category] = (totals[tx.category] || 0) + Number(tx.amount || 0);
+      });
+
+      return Object.keys(defaultBudgets).map(category => {
+        const spent = totals[category] || 0;
+        return {
+          category,
+          budget: Number(state.budgets[category] || 0),
+          spent,
+          remaining: Number(state.budgets[category] || 0) - spent
+        };
+      });
+    }
+
+    function shortDate(dateString) {
+      const d = new Date(dateString);
+      return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' });
+    }
+
+    function getMonthKey(dateString) {
+      const d = new Date(dateString);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    function getWeekKey(dateString) {
+      const d = new Date(dateString);
+      const onejan = new Date(d.getFullYear(), 0, 1);
+      const week = Math.ceil((((d - onejan) / 86400000) + onejan.getDay() + 1) / 7);
+      return `${d.getFullYear()}-W${week}`;
+    }
+
+    function getStartOfWeek(date) {
+      const d = new Date(date);
+      const day = d.getDay();
+      const diff = (day === 0 ? -6 : 1 - day);
+      const start = new Date(d);
+      start.setDate(d.getDate() + diff);
+      start.setHours(0, 0, 0, 0);
+      return start;
+    }
+
+    function getLastNDaysAgo(n) {
+      const d = new Date();
+      d.setDate(d.getDate() - n);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    }
+
+    function transactionTypeLabel(type) {
+      if (type === 'expense') return 'Expense';
+      if (type === 'udhar') return 'Udhar';
+      return 'Borrowed';
+    }
+
+    function parseAmount(value) {
+      return Number(value || 0);
+    }
+
+    function getExpenseTotalForRange(items, rangeName) {
+      const now = new Date();
+      if (rangeName === 'weekly') {
+        const start = new Date();
+        start.setDate(now.getDate() - 6);
+        start.setHours(0, 0, 0, 0);
+        return items.filter(tx => new Date(tx.date) >= start && new Date(tx.date) <= now).reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
+      }
+      if (rangeName === 'comparison') {
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+        const prevMonth = new Date(currentYear, currentMonth - 1, 1);
+        const currentTotal = items.filter(tx => {
+          const d = new Date(tx.date);
+          return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+        }).reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
+        const previousTotal = items.filter(tx => {
+          const d = new Date(tx.date);
+          return d.getMonth() === prevMonth.getMonth() && d.getFullYear() === prevMonth.getFullYear();
+        }).reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
+        return currentTotal - previousTotal;
+      }
+
+      return items.filter(tx => {
+        const d = new Date(tx.date);
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      }).reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
+    }
+
+    function getSummaryMetrics() {
+      const now = new Date();
+      const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+      let totalExpense = 0;
+      let totalUdhar = 0;
+      let totalBorrowed = 0;
+      let thisMonthExpense = 0;
+      let pendingUdhar = 0;
+      let pendingBorrowed = 0;
+
+      state.transactions.forEach((t) => {
+        const amount = parseAmount(t.amount);
+        if (t.type === 'expense') {
+          totalExpense += amount;
+          if (getMonthKey(t.date) === currentMonthKey) thisMonthExpense += amount;
+        }
+
+        if (t.type === 'udhar') {
+          totalUdhar += amount;
+          if (!t.settled) pendingUdhar += amount;
+        }
+
+        if (t.type === 'borrowed') {
+          totalBorrowed += amount;
+          if (!t.settled) pendingBorrowed += amount;
+        }
+      });
+
+      const net = totalUdhar - totalBorrowed;
+
+      return {
+        totalExpense,
+        thisMonthExpense,
+        pendingUdhar,
+        pendingBorrowed,
+        net,
+        totalUdhar,
+        totalBorrowed
+      };
+    }
+
+    function renderSummary() {
+      const summary = getSummaryMetrics();
+      const cards = [
+        {
+          label: 'My Expense',
+          value: formatCurrency(summary.totalExpense),
+          note: `${formatCurrency(summary.thisMonthExpense)} this month`,
+          color: 'red',
+          chip: 'Spending'
+        },
+        {
+          label: 'Udhar to me',
+          value: formatCurrency(summary.pendingUdhar),
+          note: `${formatCurrency(summary.totalUdhar)} total`,
+          color: 'green',
+          chip: 'Receivable'
+        },
+        {
+          label: 'I borrowed',
+          value: formatCurrency(summary.pendingBorrowed),
+          note: `${formatCurrency(summary.totalBorrowed)} total`,
+          color: 'yellow',
+          chip: 'Payable'
+        },
+        {
+          label: 'Net Position',
+          value: formatCurrency(summary.net),
+          note: summary.net >= 0 ? 'You are ahead' : 'You owe more than due',
+          color: summary.net >= 0 ? 'green' : 'red',
+          chip: 'Balance'
+        }
+      ];
+
+      summaryGrid.innerHTML = cards.map(card => `
+        <div class="stat-card">
+          <div class="stat-label">
+            <span>${card.label}</span>
+            <span class="chip ${card.color}">${card.chip}</span>
+          </div>
+          <div class="stat-value">${card.value}</div>
+          <div class="mini-note">${card.note}</div>
+        </div>
+      `).join('');
+    }
+
+    function renderMoneyPlan() {
+      const budgetData = getBudgetData();
+      budgetList.innerHTML = budgetData.map(item => `
+        <div class="budget-row">
+          <span>${item.category}</span>
+          <input class="budget-input" data-budget-category="${item.category}" type="number" min="0" step="100" value="${item.budget}" aria-label="${item.category} budget" />
+        </div>
+      `).join('');
+
+      const currentMonthExpense = getSummaryMetrics().thisMonthExpense;
+      monthlyGoalInput.value = state.monthlyGoal || '';
+      if (!state.monthlyGoal) {
+        goalStatus.textContent = 'No goal set';
+        goalProgress.style.width = '0%';
+      } else {
+        const percentage = Math.min((currentMonthExpense / state.monthlyGoal) * 100, 100);
+        goalStatus.textContent = `${formatCurrency(currentMonthExpense)} of ${formatCurrency(state.monthlyGoal)}`;
+        goalProgress.style.width = `${percentage}%`;
+        goalProgress.style.background = currentMonthExpense > state.monthlyGoal ? 'var(--red)' : 'var(--primary)';
+      }
+
+      if (!state.recurring.length) {
+        recurringList.innerHTML = '<div class="empty-state">No recurring expenses saved.</div>';
+      } else {
+        recurringList.innerHTML = state.recurring.map(item => `
+          <div class="recurring-row">
+            <div class="row-copy">
+              <strong>${escapeHtml(item.name)}</strong>
+              <span>${formatCurrency(item.amount)} monthly</span>
+            </div>
+            <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">
+              <button class="tiny-btn" data-use-recurring="${item.id}">Add now</button>
+              <button class="tiny-btn danger" data-delete-recurring="${item.id}">Delete</button>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      if (!state.settlements.length) {
+        settlementList.innerHTML = '<div class="empty-state">No settlements yet.</div>';
+      } else {
+        settlementList.innerHTML = [...state.settlements].reverse().slice(0, 8).map(item => `
+          <div class="settlement-row">
+            <div class="row-copy">
+              <strong>${escapeHtml(item.person)}</strong>
+              <span>${item.type === 'udhar' ? 'Received from' : 'Paid to'} ${shortDate(item.date)}</span>
+            </div>
+            <strong>${formatCurrency(item.amount)}</strong>
+          </div>
+        `).join('');
+      }
+
+      recurringList.querySelectorAll('[data-delete-recurring]').forEach(button => {
+        button.addEventListener('click', () => {
+          const id = button.getAttribute('data-delete-recurring');
+          state.recurring = state.recurring.filter(item => item.id !== id);
+          saveState();
+          renderMoneyPlan();
+        });
+      });
+
+      recurringList.querySelectorAll('[data-use-recurring]').forEach(button => {
+        button.addEventListener('click', () => {
+          const item = state.recurring.find(entry => entry.id === button.getAttribute('data-use-recurring'));
+          if (!item) return;
+          typeInput.value = 'expense';
+          personInput.value = item.name;
+          amountInput.value = item.amount;
+          categoryInput.value = item.category || 'bills';
+          paymentMethodInput.value = item.paymentMethod || 'cash';
+          dateInput.value = new Date().toISOString().slice(0, 10);
+          notesInput.value = 'Recurring expense';
+          form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      });
+    }
+
+    function renderActivity() {
+      const rows = getFilteredTransactions();
+      if (!rows.length) {
+        activityList.innerHTML = '<div class="empty-state">No matching transactions found.</div>';
+        return;
+      }
+
+      activityList.innerHTML = rows.map(tx => {
+        const badgeType = tx.type === 'expense' ? 'expense' : tx.type === 'udhar' ? 'udhar' : 'borrowed';
+        const badgeText = tx.type === 'expense' ? 'EX' : tx.type === 'udhar' ? 'UD' : 'BR';
+        const amountClass = tx.type === 'udhar' ? 'positive' : 'negative';
+        const settledText = tx.type === 'expense' ? '' : tx.settled ? '<span class="chip green">Cleared</span>' : '<span class="chip red">Open</span>';
+        const amountPrefix = tx.type === 'udhar' ? '+' : '-';
+
+        return `
+          <div class="entry">
+            <div class="entry-main">
+              <div class="entry-badge ${badgeType}">${badgeText}</div>
+              <div class="entry-text">
+                <p class="entry-name">${escapeHtml(tx.person)}</p>
+                <div class="entry-meta">
+                  <span>${transactionTypeLabel(tx.type)}</span>
+                  <span>•</span>
+                  <span>${tx.category}</span>
+                  <span>•</span>
+                  <span>${tx.paymentMethod}</span>
+                  <span>•</span>
+                  <span>${shortDate(tx.date)}</span>
+                </div>
+                <div class="entry-actions">
+                  ${settledText}
+                  ${tx.notes ? `<span class="contrast">${escapeHtml(tx.notes)}</span>` : ''}
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="amount ${amountClass}">${amountPrefix}${formatCurrency(tx.amount)}</div>
+              <div style="margin-top:8px; display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap;">
+                <button class="tiny-btn" data-edit-id="${tx.id}">Edit</button>
+                ${tx.type !== 'expense' ? `<button class="tiny-btn ${tx.settled ? 'danger' : 'success'}" data-clear-id="${tx.id}">${tx.settled ? 'Reopen' : 'Clear'}</button>` : ''}
+                <button class="tiny-btn danger" data-delete-id="${tx.id}">Delete</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      activityList.querySelectorAll('[data-clear-id]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-clear-id');
+          const tx = state.transactions.find(t => t.id === id);
+          if (!tx) return;
+          const wasSettled = Boolean(tx.settled);
+          tx.settled = !tx.settled;
+          if (!wasSettled && tx.settled) {
+            state.settlements.push({
+              id: makeId(),
+              person: tx.person,
+              amount: Number(tx.amount),
+              type: tx.type,
+              date: new Date().toISOString().slice(0, 10)
+            });
+          }
+          saveState();
+          renderAll();
+        });
+      });
+
+      activityList.querySelectorAll('[data-delete-id]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-delete-id');
+          const confirmed = confirm('Delete this transaction?');
+          if (!confirmed) return;
+          state.transactions = state.transactions.filter(t => t.id !== id);
+          saveState();
+          renderAll();
+        });
+      });
+
+      activityList.querySelectorAll('[data-edit-id]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-edit-id');
+          const tx = state.transactions.find(t => t.id === id);
+          if (!tx) return;
+
+          form.dataset.editingId = id;
+          typeInput.value = tx.type;
+          personInput.value = tx.person;
+          amountInput.value = tx.amount;
+          categoryInput.value = tx.category;
+          paymentMethodInput.value = tx.paymentMethod;
+          dateInput.value = tx.date;
+          notesInput.value = tx.notes || '';
+
+          const submitBtn = form.querySelector('button[type="submit"]');
+          if (submitBtn) submitBtn.textContent = 'Update Transaction';
+
+          const clearBtn = document.getElementById('clearFormBtn');
+          if (clearBtn) clearBtn.textContent = 'Cancel';
+        });
+      });
+    }
+
+    function renderChart(range = 'monthly') {
+      currentRange = range;
+      const filtered = getFilteredTransactions().filter(tx => tx.type === 'expense');
+      if (!filtered.length) {
+        chartContainer.innerHTML = '<div class="empty-state" style="height:200px; display:grid; place-items:center;">No expense data</div>';
+        categoryList.innerHTML = '<div class="empty-state">No category data yet.</div>';
+        chartTitle.textContent = 'Monthly spend';
+        chartTotal.textContent = '₹0';
+        categoryTotal.textContent = '₹0';
+        return;
+      }
+
+      const selectedRange = range;
+      let data = [];
+      let title = 'Monthly spend';
+
+      if (selectedRange === 'weekly') {
+        const last7 = Array.from({ length: 7 }, (_, i) => {
+          const d = getLastNDaysAgo(6 - i);
+          const key = d.toISOString().slice(0, 10);
+          return { label: d.toLocaleDateString('en-IN', { weekday: 'short' }), key };
+        });
+
+        data = last7.map(day => {
+          const total = filtered.filter(tx => tx.date === day.key).reduce((sum, tx) => sum + Number(tx.amount), 0);
+          return { label: day.label, total };
+        });
+        title = 'Weekly spend';
+      } else if (selectedRange === 'comparison') {
+        const currentMonth = new Date();
+        const prevMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1);
+
+        const current = filtered.filter(tx => {
+          const d = new Date(tx.date);
+          return d.getMonth() === currentMonth.getMonth() && d.getFullYear() === currentMonth.getFullYear();
+        }).reduce((sum, tx) => sum + Number(tx.amount), 0);
+
+        const previous = filtered.filter(tx => {
+          const d = new Date(tx.date);
+          return d.getMonth() === prevMonth.getMonth() && d.getFullYear() === prevMonth.getFullYear();
+        }).reduce((sum, tx) => sum + Number(tx.amount), 0);
+
+        data = [
+          { label: 'Last month', total: previous },
+          { label: 'This month', total: current }
+        ];
+        title = 'Monthly comparison';
+      } else {
+        const monthMap = new Map();
+        filtered.forEach(tx => {
+          const d = new Date(tx.date);
+          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+          const label = d.toLocaleDateString('en-IN', { month: 'short' });
+          monthMap.set(key, { label, total: (monthMap.get(key)?.total || 0) + Number(tx.amount) });
+        });
+
+        const entries = [...monthMap.entries()].sort((a, b) => a[0].localeCompare(b[0])).slice(-6);
+        data = entries.map(([_, value]) => ({ label: value.label, total: value.total }));
+        title = 'Monthly spend';
+      }
+
+      const maxValue = Math.max(...data.map(d => d.total), 1);
+      chartTitle.textContent = title;
+      chartTotal.textContent = formatCurrency(data.reduce((sum, d) => sum + d.total, 0));
+
+      chartContainer.innerHTML = data.map(item => `
+        <div class="bar-group">
+          <div class="bar ${item.total > 0 ? 'alt' : ''}" style="height:${Math.max((item.total / maxValue) * 160, 8)}px"></div>
+          <div class="bar-label">${item.label}</div>
+        </div>
+      `).join('');
+
+      const categoryMap = new Map();
+      filtered.forEach(tx => {
+        const key = tx.category;
+        categoryMap.set(key, (categoryMap.get(key) || 0) + Number(tx.amount));
+      });
+
+      const categoryEntries = [...categoryMap.entries()].sort((a, b) => b[1] - a[1]);
+      const totalCategory = categoryEntries.reduce((sum, [, amount]) => sum + amount, 0);
+      categoryTotal.textContent = formatCurrency(totalCategory);
+
+      const budgetData = getBudgetData();
+
+      categoryList.innerHTML = categoryEntries.map(([cat, amount]) => {
+        const budgetItem = budgetData.find(item => item.category === cat);
+        const remaining = budgetItem ? budgetItem.remaining : 0;
+        return `
+        <div class="mini-item">
+          <div class="mini-label">
+            <span class="dot" style="background:${categoryColors[cat] || '#94a3b8'}"></span>
+            <span>${cat}</span>
+          </div>
+          <div style="text-align:right;">
+            <div><strong>${formatCurrency(amount)}</strong></div>
+            <div class="contrast">${remaining >= 0 ? 'Left ' + formatCurrency(remaining) : 'Over ' + formatCurrency(Math.abs(remaining))}</div>
+          </div>
+        </div>
+      `; }).join('');
+
+      const paymentMap = new Map();
+      filtered.forEach(tx => {
+        paymentMap.set(tx.paymentMethod, (paymentMap.get(tx.paymentMethod) || 0) + Number(tx.amount));
+      });
+      const paymentEntries = [...paymentMap.entries()].sort((a, b) => b[1] - a[1]);
+      const totalPayment = paymentEntries.reduce((sum, [, amount]) => sum + amount, 0);
+      paymentTotal.textContent = formatCurrency(totalPayment);
+      paymentList.innerHTML = paymentEntries.length ? paymentEntries.map(([method, amount]) => `
+        <div class="mini-item">
+          <span>${escapeHtml(method)}</span>
+          <strong>${formatCurrency(amount)}</strong>
+        </div>
+      `).join('') : '<div class="empty-state">No payment data yet.</div>';
+    }
+
+    function handleSubmit(event) {
+      event.preventDefault();
+
+      const editingId = form.dataset.editingId;
+      const payload = {
+        id: editingId || makeId(),
+        type: typeInput.value,
+        person: personInput.value.trim(),
+        amount: Number(amountInput.value),
+        category: categoryInput.value,
+        paymentMethod: paymentMethodInput.value,
+        date: dateInput.value || new Date().toISOString().slice(0, 10),
+        notes: notesInput.value.trim(),
+        settled: false
+      };
+
+      if (!payload.person || !payload.amount || payload.amount <= 0) return;
+
+      if (editingId) {
+        const index = state.transactions.findIndex(t => t.id === editingId);
+        if (index >= 0) {
+          state.transactions[index] = { ...state.transactions[index], ...payload };
+        }
+      } else {
+        state.transactions.push(payload);
+      }
+
+      saveState();
+      clearForm(true);
+      renderAll();
+    }
+
+    function clearForm(resetButtonText = false) {
+      form.reset();
+      form.dataset.editingId = '';
+      dateInput.value = new Date().toISOString().slice(0, 10);
+      const submitBtn = form.querySelector('button[type="submit"]');
+      if (submitBtn) submitBtn.textContent = 'Save Transaction';
+      const clearBtn = document.getElementById('clearFormBtn');
+      if (clearBtn) clearBtn.textContent = resetButtonText ? 'Clear' : 'Cancel';
+    }
+
+    function importData(event) {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'application/json';
+      input.addEventListener('change', (changeEvent) => {
+        const file = changeEvent.target.files && changeEvent.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (loadEvent) => {
+          try {
+            const parsed = JSON.parse(String(loadEvent.target.result || '{}'));
+            const items = Array.isArray(parsed.transactions) ? parsed.transactions : [];
+            state.transactions = items.map(normalizeTransaction);
+            saveState();
+            renderAll();
+          } catch {
+            alert('The selected file could not be imported. Please use a valid expense tracker export.');
+          }
+        };
+        reader.readAsText(file);
+      });
+      input.click();
+    }
+
+    function resetData() {
+      const confirmed = confirm('Clear all saved expense data?');
+      if (!confirmed) return;
+      state.transactions = [];
+      state.settlements = [];
+      saveState();
+      renderAll();
+    }
+
+    function exportData() {
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'expense-tracker-data.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function renderAll() {
+      renderSummary();
+      renderMoneyPlan();
+      renderActivity();
+      renderChart(currentRange);
+    }
+
+    document.getElementById('clearFormBtn').addEventListener('click', () => {
+      if (form.dataset.editingId) {
+        clearForm(true);
+        return;
+      }
+      form.reset();
+      dateInput.value = new Date().toISOString().slice(0, 10);
+    });
+    document.getElementById('resetBtn').addEventListener('click', resetData);
+    document.getElementById('exportBtn').addEventListener('click', exportData);
+    document.getElementById('importBtn').addEventListener('click', importData);
+    document.getElementById('saveGoalBtn').addEventListener('click', () => {
+      state.monthlyGoal = Math.max(0, Number(monthlyGoalInput.value || 0));
+      saveState();
+      renderMoneyPlan();
+    });
+    document.getElementById('saveBudgetsBtn').addEventListener('click', () => {
+      budgetList.querySelectorAll('[data-budget-category]').forEach(input => {
+        state.budgets[input.getAttribute('data-budget-category')] = Math.max(0, Number(input.value || 0));
+      });
+      saveState();
+      renderMoneyPlan();
+      renderChart(currentRange);
+    });
+    document.getElementById('addRecurringBtn').addEventListener('click', () => {
+      const name = recurringNameInput.value.trim();
+      const amount = Number(recurringAmountInput.value || 0);
+      if (!name || amount <= 0) return;
+      state.recurring.push({
+        id: makeId(),
+        name,
+        amount,
+        category: 'bills',
+        paymentMethod: 'cash'
+      });
+      recurringNameInput.value = '';
+      recurringAmountInput.value = '';
+      saveState();
+      renderMoneyPlan();
+    });
+    form.addEventListener('submit', handleSubmit);
+
+    [searchInput, filterType, filterCategory, filterPayment].forEach(control => {
+      control.addEventListener('input', () => renderAll());
+      control.addEventListener('change', () => renderAll());
+    });
+
+    document.querySelectorAll('[data-range]').forEach(button => {
+      button.addEventListener('click', () => {
+        document.querySelectorAll('[data-range]').forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+        currentRange = button.dataset.range;
+        renderChart(currentRange);
+      });
+    });
+
+    dateInput.value = new Date().toISOString().slice(0, 10);
+    clearForm(true);
+    renderAll();
+  </script>
+</body>
+</html>
