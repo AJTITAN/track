@@ -24,6 +24,16 @@
       --radius: 16px;
     }
 
+    body.dark {
+      --bg: #111827;
+      --panel: #1f2937;
+      --panel-alt: #182231;
+      --line: #374151;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
+    }
+
     * { box-sizing: border-box; }
 
     html, body {
@@ -70,6 +80,30 @@
       flex-wrap: wrap;
     }
 
+    .quick-add {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin: 0 0 16px;
+    }
+
+    .quick-add button {
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--panel-alt);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    .quick-add button strong {
+      color: var(--primary);
+      font-size: 1rem;
+      margin-right: 3px;
+    }
+
     button, select, input, textarea {
       font: inherit;
     }
@@ -90,6 +124,10 @@
       border: none;
       color: white;
       box-shadow: var(--shadow);
+    }
+
+    body.dark .btn.primary {
+      color: #fff;
     }
 
     .btn.warn {
@@ -216,6 +254,8 @@
       outline: none;
       transition: 0.15s ease;
     }
+
+    input::placeholder, textarea::placeholder { color: var(--muted); opacity: 0.8; }
 
     input:focus, select:focus, textarea:focus {
       border-color: rgba(59, 130, 246, 0.6);
@@ -555,13 +595,25 @@
     }
 
     @media (max-width: 640px) {
-      body { padding: 18px 12px 42px; }
+      body { padding: 12px 10px 30px; }
+      .topbar { align-items: flex-start; margin-bottom: 16px; }
+      .title-wrap h1 { font-size: 1.8rem; }
+      .title-wrap p { font-size: 0.84rem; line-height: 1.4; }
+      .top-actions { width: 100%; }
+      .top-actions .btn { flex: 1; padding: 9px 8px; font-size: 0.78rem; }
       .summary-grid, .form-grid { grid-template-columns: 1fr; }
       .filters-row { grid-template-columns: 1fr; }
       .inline-form { grid-template-columns: 1fr; }
       .entry { grid-template-columns: 1fr; }
       .panel-header { padding: 16px 14px 12px; }
       .panel-body { padding: 14px; }
+      .stat-card { padding: 14px; }
+      .stat-value { font-size: 1.55rem; }
+      .analytics-toolbar { overflow-x: auto; }
+      .segmented { flex: 0 0 auto; }
+      .entry > div:last-child { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+      .entry > div:last-child > div:last-child { margin-top: 0 !important; }
+      .tiny-btn { padding: 8px 9px; }
     }
   </style>
 </head>
@@ -575,6 +627,7 @@
       <div class="top-actions">
         <button class="btn" id="importBtn" type="button">Import</button>
         <button class="btn" id="exportBtn">Export</button>
+        <button class="btn" id="themeBtn" type="button">Dark mode</button>
         <button class="btn primary" id="resetBtn">Reset Data</button>
       </div>
     </header>
@@ -587,6 +640,11 @@
           <h2>Add Transaction</h2>
         </div>
         <div class="panel-body">
+          <div class="quick-add" aria-label="Quick add transaction">
+            <button type="button" data-quick-type="expense"><strong>+</strong> Expense</button>
+            <button type="button" data-quick-type="udhar"><strong>+</strong> Udhar</button>
+            <button type="button" data-quick-type="borrowed"><strong>+</strong> Borrowed</button>
+          </div>
           <form id="transactionForm">
             <div class="form-grid">
               <div class="field">
@@ -599,8 +657,8 @@
               </div>
 
               <div class="field">
-                <label for="person">Name / Person</label>
-                <input id="person" type="text" placeholder="e.g. Riya, Rahul, Cafe 9" required />
+                <label for="person" id="personLabel">Name / Person</label>
+                <input id="person" type="text" placeholder="Ashish" />
               </div>
 
               <div class="field">
@@ -828,6 +886,7 @@
     const paymentMethodInput = document.getElementById('paymentMethod');
     const dateInput = document.getElementById('date');
     const notesInput = document.getElementById('notes');
+    const personLabel = document.getElementById('personLabel');
     const searchInput = document.getElementById('searchInput');
     const filterType = document.getElementById('filterType');
     const filterCategory = document.getElementById('filterCategory');
@@ -851,6 +910,9 @@
     const settlementList = document.getElementById('settlementList');
 
     let currentRange = 'monthly';
+    let darkMode = localStorage.getItem('expense-tracker-theme') === 'dark';
+
+    if (darkMode) document.body.classList.add('dark');
 
     const categoryColors = {
       food: '#60a5fa',
@@ -996,6 +1058,21 @@
       if (type === 'expense') return 'Expense';
       if (type === 'udhar') return 'Udhar';
       return 'Borrowed';
+    }
+
+    function updatePersonField() {
+      const isExpense = typeInput.value === 'expense';
+      if (isExpense) {
+        personLabel.textContent = 'Name';
+        personInput.placeholder = 'Ashish';
+        personInput.value = personInput.value || 'Ashish';
+        personInput.required = false;
+      } else {
+        personLabel.textContent = 'Person';
+        personInput.placeholder = typeInput.value === 'udhar' ? 'Who owes you?' : 'Who do you owe?';
+        if (personInput.value === 'Ashish') personInput.value = '';
+        personInput.required = true;
+      }
     }
 
     function parseAmount(value) {
@@ -1420,7 +1497,7 @@
       const payload = {
         id: editingId || makeId(),
         type: typeInput.value,
-        person: personInput.value.trim(),
+        person: typeInput.value === 'expense' ? (personInput.value.trim() || 'Ashish') : personInput.value.trim(),
         amount: Number(amountInput.value),
         category: categoryInput.value,
         paymentMethod: paymentMethodInput.value,
@@ -1429,7 +1506,7 @@
         settled: false
       };
 
-      if (!payload.person || !payload.amount || payload.amount <= 0) return;
+      if ((typeInput.value !== 'expense' && !payload.person) || !payload.amount || payload.amount <= 0) return;
 
       if (editingId) {
         const index = state.transactions.findIndex(t => t.id === editingId);
@@ -1449,6 +1526,7 @@
       form.reset();
       form.dataset.editingId = '';
       dateInput.value = new Date().toISOString().slice(0, 10);
+      updatePersonField();
       const submitBtn = form.querySelector('button[type="submit"]');
       if (submitBtn) submitBtn.textContent = 'Save Transaction';
       const clearBtn = document.getElementById('clearFormBtn');
@@ -1510,12 +1588,17 @@
         clearForm(true);
         return;
       }
-      form.reset();
-      dateInput.value = new Date().toISOString().slice(0, 10);
+      clearForm(true);
     });
     document.getElementById('resetBtn').addEventListener('click', resetData);
     document.getElementById('exportBtn').addEventListener('click', exportData);
     document.getElementById('importBtn').addEventListener('click', importData);
+    document.getElementById('themeBtn').addEventListener('click', () => {
+      darkMode = !darkMode;
+      document.body.classList.toggle('dark', darkMode);
+      localStorage.setItem('expense-tracker-theme', darkMode ? 'dark' : 'light');
+      document.getElementById('themeBtn').textContent = darkMode ? 'Light mode' : 'Dark mode';
+    });
     document.getElementById('saveGoalBtn').addEventListener('click', () => {
       state.monthlyGoal = Math.max(0, Number(monthlyGoalInput.value || 0));
       saveState();
@@ -1546,6 +1629,17 @@
       renderMoneyPlan();
     });
     form.addEventListener('submit', handleSubmit);
+    typeInput.addEventListener('change', updatePersonField);
+
+    document.querySelectorAll('[data-quick-type]').forEach(button => {
+      button.addEventListener('click', () => {
+        typeInput.value = button.dataset.quickType;
+        dateInput.value = new Date().toISOString().slice(0, 10);
+        updatePersonField();
+        amountInput.focus();
+        form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
 
     [searchInput, filterType, filterCategory, filterPayment].forEach(control => {
       control.addEventListener('input', () => renderAll());
@@ -1563,6 +1657,8 @@
 
     dateInput.value = new Date().toISOString().slice(0, 10);
     clearForm(true);
+    updatePersonField();
+    document.getElementById('themeBtn').textContent = darkMode ? 'Light mode' : 'Dark mode';
     renderAll();
   </script>
 </body>
