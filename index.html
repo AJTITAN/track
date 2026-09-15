@@ -1781,6 +1781,121 @@
       if (clearBtn) clearBtn.textContent = resetButtonText ? 'Clear' : 'Cancel';
     }
 
+    function legacyCategory(category) {
+      const names = {
+        food: 'Food',
+        shopping: 'Shopping',
+        travel: 'Travel',
+        rent: 'Rent',
+        bills: 'Bills',
+        health: 'Health',
+        education: 'Education',
+        entertainment: 'Entertainment',
+        other: 'Other'
+      };
+      return names[String(category || '').toLowerCase()] || String(category || 'Other');
+    }
+
+    function buildLegacyExport() {
+      const legacyTransactions = [];
+      const legacyDebts = [];
+
+      state.transactions.map(normalizeTransaction).forEach(tx => {
+        if (tx.type === 'expense') {
+          legacyTransactions.push({
+            id: tx.id,
+            type: 'expense',
+            amount: tx.amount,
+            category: legacyCategory(tx.category),
+            note: tx.notes,
+            date: tx.date
+          });
+          return;
+        }
+
+        legacyDebts.push({
+          id: tx.id,
+          direction: tx.type === 'borrowed' ? 'i-owe' : 'they-owe',
+          person: tx.person,
+          amount: tx.amount,
+          note: tx.notes,
+          date: tx.date,
+          settled: Boolean(tx.settled),
+          ...(tx.settled ? { settledDate: tx.settledDate || new Date().toISOString().slice(0, 10) } : {})
+        });
+      });
+
+      const legacySettlements = state.settlements.map(settlement => ({
+        id: settlement.id || makeId(),
+        debtId: settlement.debtId || '',
+        person: settlement.person || '',
+        direction: settlement.type === 'borrowed' ? 'i-owe' : 'they-owe',
+        amount: Number(settlement.amount || 0),
+        note: settlement.note || '',
+        originalDate: settlement.originalDate || settlement.date || '',
+        settledDate: settlement.settledDate || settlement.date || ''
+      }));
+
+      return {
+        exportedAt: new Date().toISOString(),
+        transactions: legacyTransactions,
+        debts: legacyDebts,
+        settlements: legacySettlements,
+        categories: [...new Set([
+          ...Object.keys(defaultBudgets).map(legacyCategory),
+          ...state.transactions.map(tx => legacyCategory(tx.category))
+        ])],
+        persons: [...new Set(state.transactions.map(tx => String(tx.person || '').trim()).filter(Boolean))],
+        sips: [],
+        sipPayments: [],
+        policies: [],
+        insPayments: [],
+        currency: '₹',
+        newState: {
+          transactions: state.transactions,
+          budgets: state.budgets,
+          monthlyGoal: state.monthlyGoal,
+          recurring: state.recurring,
+          settlements: state.settlements
+        }
+      };
+    }
+
+    function importLegacyTransactions(parsed) {
+      const imported = [];
+      const legacyTransactions = Array.isArray(parsed.transactions) ? parsed.transactions : [];
+
+      legacyTransactions.forEach(tx => {
+        if (tx.type !== 'expense' && tx.type !== 'income') return;
+        if (tx.type === 'income') return;
+        imported.push(normalizeTransaction({
+          id: tx.id,
+          type: 'expense',
+          amount: tx.amount,
+          category: String(tx.category || 'other').toLowerCase(),
+          paymentMethod: tx.paymentMethod || 'cash',
+          date: tx.date,
+          notes: tx.notes || tx.note
+        }));
+      });
+
+      (Array.isArray(parsed.debts) ? parsed.debts : []).forEach(debt => {
+        imported.push(normalizeTransaction({
+          id: debt.id,
+          type: debt.direction === 'i-owe' ? 'borrowed' : 'udhar',
+          person: debt.person,
+          amount: debt.amount,
+          category: 'other',
+          paymentMethod: 'cash',
+          date: debt.date,
+          notes: debt.note,
+          settled: debt.settled
+        }));
+      });
+
+      return imported;
+    }
+
     function importData(event) {
       const input = document.createElement('input');
       input.type = 'file';
@@ -1792,8 +1907,17 @@
         reader.onload = (loadEvent) => {
           try {
             const parsed = JSON.parse(String(loadEvent.target.result || '{}'));
-            const items = Array.isArray(parsed.transactions) ? parsed.transactions : [];
-            state.transactions = items.map(normalizeTransaction);
+            if (parsed.newState && typeof parsed.newState === 'object') {
+              state.transactions = Array.isArray(parsed.newState.transactions)
+                ? parsed.newState.transactions.map(normalizeTransaction) : [];
+              state.budgets = { ...defaultBudgets, ...(parsed.newState.budgets || {}) };
+              state.monthlyGoal = Number(parsed.newState.monthlyGoal || 0);
+              state.recurring = Array.isArray(parsed.newState.recurring) ? parsed.newState.recurring : [];
+              state.settlements = Array.isArray(parsed.newState.settlements) ? parsed.newState.settlements : [];
+            } else {
+              state.transactions = importLegacyTransactions(parsed);
+              state.settlements = Array.isArray(parsed.settlements) ? parsed.settlements : [];
+            }
             saveState();
             renderAll();
           } catch {
@@ -1815,11 +1939,11 @@
     }
 
     function exportData() {
-      const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+      const blob = new Blob([JSON.stringify(buildLegacyExport(), null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'expense-tracker-data.json';
+      a.download = 'expense-tracker-old-compatible.json';
       a.click();
       URL.revokeObjectURL(url);
     }
